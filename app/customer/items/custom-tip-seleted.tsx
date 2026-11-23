@@ -4,7 +4,7 @@ import { Colors } from '@/constants/theme';
 export default function CustomerCustomTip() {
     return (
         <CustomTipContent
-            continueRoute="/customer/items/payment-type"
+            continueRoute="/customer/orders-details/my-orders"
             skipRoute="/customer/(tabs)/search"
             primaryColor={Colors.BRAND_PRIMARY_LIGHT}
         />

@@ -45,7 +45,6 @@ export default function Splash() {
         hasNavigated.current = true;
 
         const role = userRoleRef.current;
-        console.log('index.tsx role:', role);
 
         if (role === 'customer') {
           router.replace('/customer/(tabs)/home');

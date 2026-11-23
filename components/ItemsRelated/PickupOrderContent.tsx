@@ -1,3 +1,4 @@
+import { useKeepAwake } from 'expo-keep-awake';
 import { Body1, Body2, Body3, ButtonText, H1, H6 } from '@/components/typo/Typography';
 import { Colors } from '@/constants/theme';
 import { useUpdateOrderStatusMutation } from '@/redux/services/orderApi';
@@ -27,10 +28,12 @@ interface PickupOrderContentProps {
 export const PickupOrderContent: React.FC<PickupOrderContentProps> = ({
     pickupCode,
     successRoute,
-    venueName = "Copper Alley Bar",
+    venueName = "",
     orderId,
     orderCode,
 }) => {
+    // keep the screen on while the customer shows the order at the bar
+    useKeepAwake();
     const [status, setStatus] = useState<PickupStatus>(PickupStatus.READY);
     const router = useRouter();
     const translateX = useRef(new Animated.Value(0)).current;
@@ -42,7 +45,6 @@ export const PickupOrderContent: React.FC<PickupOrderContentProps> = ({
     useEffect(() => {
         if (orderId) {
             orderIdRef.current = orderId;
-            console.log('orderIdRef updated:', orderId);
         }
     }, [orderId]);
 
@@ -60,7 +62,6 @@ export const PickupOrderContent: React.FC<PickupOrderContentProps> = ({
             }).unwrap();
             console.log('Status update success'); // debug
         } catch (e) {
-            console.log('Status update error:', e);
         }
         setStatus(PickupStatus.CONFIRMED);
     }, []);

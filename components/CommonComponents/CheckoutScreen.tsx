@@ -1,3 +1,4 @@
+import { useConfirmServerPayment } from '@/hooks/useConfirmServerPayment';
 import { useStripe } from '@stripe/stripe-react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
@@ -45,11 +46,13 @@ import SavedCardsModal from '../Savedcardsmodal';
 import { showToast } from '../Toast';
 
 interface CheckoutScreenProps {
-    paymentPath: '/customer/items/payment-type' | '/guest/payment-type';
+    // only used to tell guest checkout from customer checkout
+    paymentPath: string;
 }
 
 const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ paymentPath }) => {
     const { initPaymentSheet, presentPaymentSheet } = useStripe();
+    const confirmServerPayment = useConfirmServerPayment();
 
     const router = useRouter();
     const insets = useSafeAreaInsets();
@@ -131,7 +134,7 @@ const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ paymentPath }) => {
             dispatch(clearCart());
             showToast('Cart cleared successfully!');
         } catch (err: any) {
-            showToast('Error', err?.data?.message || 'Failed to clear cart.');
+            showToast(err?.data?.message || 'Failed to clear cart.', 'error');
         }
     };
 
@@ -155,7 +158,6 @@ const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ paymentPath }) => {
 
             setIsFetchingCards(true);
             const result = await triggerGetSavedCards().unwrap();
-            console.log(' Saved Cards Response:', JSON.stringify(result, null, 2));
             const cards = result?.data || [];
             setSavedCards(cards);
 
@@ -166,7 +168,6 @@ const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ paymentPath }) => {
                 await payWithNewCard();
             }
         } catch (error: any) {
-            console.log(' getSavedCards error:', JSON.stringify(error, null, 2));
             await payWithNewCard();
         } finally {
             setIsFetchingCards(false);
@@ -178,7 +179,6 @@ const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ paymentPath }) => {
         setShowCardsModal(false);
         try {
             const data = await createPayment({}).unwrap();
-            console.log(' createPayment (new card) response:', JSON.stringify(data, null, 2));
 
             const { error: initError } = await initPaymentSheet({
                 paymentIntentClientSecret: data.clientSecret,
@@ -231,7 +231,6 @@ const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ paymentPath }) => {
                 // orderId: pendingSuccessData?.orderId,
             }).unwrap();
         } catch (err) {
-            console.log('removeCard error:', JSON.stringify(err, null, 2));
         }
         await onPaymentSuccess(pendingSuccessData);
     };
@@ -240,15 +239,17 @@ const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ paymentPath }) => {
     // ── Pay with SAVED card ──
     const payWithSavedCard = async () => {
         if (!selectedCardId) return;
-        console.log(' Paying with savedCard ID:', selectedCardId);
         setIsSavedCardPaying(true);
         try {
             const data = await createPayment({ paymentMethodId: selectedCardId }).unwrap();
-            console.log(' createPayment response:', JSON.stringify(data, null, 2));
             setShowCardsModal(false);
+            const result = await confirmServerPayment(data.clientSecret);
+            if (result.status === 'failed') {
+                showToast(result.message, 'error');
+                return;
+            }
             await onPaymentSuccess(data);
         } catch (error: any) {
-            console.log(' payWithSavedCard error:', JSON.stringify(error, null, 2));
             setShowCardsModal(false);
             showToast(error?.data?.message || error?.message || 'Payment failed!');
         } finally {

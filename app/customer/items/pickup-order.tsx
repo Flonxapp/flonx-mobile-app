@@ -9,11 +9,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 export default function CustomerPickup() {
     const checked = useRequireCustomer();
 
-    if (!checked) return (
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.APP_BACKGROUND }}>
-            <CustomLoader size={40} />
-        </View>
-    );
     const { id,
         orderCode,
         venueName,
@@ -24,6 +19,12 @@ export default function CustomerPickup() {
         venueName: string;
         colorCode: string;
     }>();
+
+    if (!checked) return (
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.APP_BACKGROUND }}>
+            <CustomLoader size={40} />
+        </View>
+    );
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: colorCode || Colors.COLOR_ACTIVE }}>

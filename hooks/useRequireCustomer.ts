@@ -1,11 +1,12 @@
 import { setCredentials } from '@/redux/authSlice';
 import { RootState } from '@/redux/store';
+import { getStoredSession } from '@/utils/session';
 import { useRouter } from 'expo-router';
-import * as SecureStore from 'expo-secure-store';
-import { jwtDecode } from 'jwt-decode';
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
+// Screens that need a logged-in customer. Guests also carry a "customer"
+// token, so the stored session role decides, not the token.
 export const useRequireCustomer = () => {
     const router = useRouter();
     const dispatch = useDispatch();
@@ -14,28 +15,18 @@ export const useRequireCustomer = () => {
 
     useEffect(() => {
         const verify = async () => {
-            
             if (role === 'customer') {
                 setChecked(true);
                 return;
             }
 
-           
-            try {
-                const token = await SecureStore.getItemAsync('accessToken');
-                if (token) {
-                    const decoded: any = jwtDecode(token);
-                    if (decoded?.role === 'customer') {
-                        dispatch(setCredentials({ role: 'customer', token }));
-                        setChecked(true);
-                        return;
-                    }
-                }
-            } catch (e) {
-                console.log('Token decode error:', e);
+            const saved = await getStoredSession();
+            if (saved.role === 'customer' && saved.accessToken) {
+                dispatch(setCredentials({ role: 'customer', token: saved.accessToken }));
+                setChecked(true);
+                return;
             }
 
-          
             router.replace('/(auth)/login' as any);
         };
 

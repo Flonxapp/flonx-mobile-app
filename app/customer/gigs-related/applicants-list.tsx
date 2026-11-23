@@ -19,7 +19,6 @@ const ApplicantsList = () => {
     // console.log("jobId received:", jobId);
 
     const { data: applicants = [], isLoading } = useGetJobApplicantsQuery(jobId, { skip: !jobId });
-    console.log("applicants data:", applicants);
 
     const renderApplicantCard = ({ item }: { item: any }) => (
         <TouchableOpacity

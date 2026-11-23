@@ -69,7 +69,6 @@ export default function BartenderInfoScreen() {
                 router.replace("/onboarding");
 
             } catch (error: any) {
-                console.log('Update error detail:', JSON.stringify(error, null, 2));
                 const message = error?.data?.message || error?.message || "Something went wrong!";
                 showToast(message);
             }

@@ -45,7 +45,6 @@ export default function RegisterPage() {
           email: values.email,
           password: values.password
         }
-        console.log("SignIn data from signup Page", data)
         // router.push("/(tabs)/home")
       } catch (error: any) {
         const message = error?.data?.message || error?.message || "something eent wrong while signing!"

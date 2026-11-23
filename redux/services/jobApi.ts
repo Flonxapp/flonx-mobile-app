@@ -35,8 +35,6 @@ export const jobApi = baseApis.injectEndpoints({
         // update job
         updateJob: builder.mutation({
             query: ({ jobId, ...jobData }) => {
-                console.log("Update URL:", `/job/update/${jobId}`);
-                console.log("Body:", jobData);
                 return {
                     url: `/job/update/${jobId}`,
                     method: "PATCH",

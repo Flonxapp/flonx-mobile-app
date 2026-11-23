@@ -155,11 +155,15 @@ export const orderApi = baseApis.injectEndpoints({
         }),
 
         // tip bartender
-        tipToBartender: builder.mutation<any, { id: string; amount: number }>({
-            query: ({ id, amount }) => ({
+        tipToBartender: builder.mutation<
+            any,
+            { id: string; amount: number; paymentMethodId?: string }
+        >({
+            query: ({ id, amount, paymentMethodId }) => ({
                 url: `/order/tip-to-bartender/${id}`,
                 method: 'POST',
-                body: { amount },
+                // with a saved card the server charges it right away
+                body: { amount, ...(paymentMethodId ? { paymentMethodId } : {}) },
             }),
             transformResponse: (response: any) => response.data,
             invalidatesTags: ['order'],

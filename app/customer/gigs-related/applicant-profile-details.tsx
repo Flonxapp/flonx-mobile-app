@@ -27,8 +27,6 @@ const ApplicantProfileDetails = () => {
     const [isRated, setIsRated] = useState(!!existingRating && Number(existingRating) > 0);
     const [myRating, setMyRating] = useState(Number(existingRating) || 0);
 
-    console.log("existingRating param:", existingRating);
-    console.log("isRated initial:", !!existingRating && Number(existingRating) > 0);
 
     const { data: bartender, isLoading } = useGetBartenderByIdQuery(
         bartenderId, { skip: !bartenderId }
@@ -194,7 +192,6 @@ const ApplicantProfileDetails = () => {
                                         setModalVisible(false);
 
                                     } catch (error: any) {
-                                        console.log("Rating error:", JSON.stringify(error, null, 2));
                                         setModalVisible(false);
                                         if (
                                             error?.data?.message?.includes('already exists') ||

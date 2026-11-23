@@ -1,16 +1,10 @@
+import { AnimatedTabIcon } from '@/components/AnimatedTabIcon';
 import { BrowseIcon, JobsIcon, ProfileIcon } from "@/assets/images/icons/icon";
 import { Colors } from "@/constants/theme";
 import { fp, hp } from "@/utils/responsive";
-import { LinearGradient } from "expo-linear-gradient";
 import { Tabs, useFocusEffect, useRouter } from "expo-router";
 import React, { useCallback, useRef } from "react";
 import { BackHandler, Platform, Text } from "react-native";
-import Animated, {
-    useAnimatedStyle,
-    useDerivedValue,
-    useSharedValue,
-    withTiming
-} from "react-native-reanimated";
 
 
 const TAB_NAMES = ['browse', 'my-jobs', 'profile'];
@@ -74,33 +68,11 @@ export default function TabsLayout() {
                             Browse
                         </Text>
                     ),
-                    tabBarIcon: ({ focused }) => {
-                        const progress = useSharedValue(focused ? 1 : 0);
-                        useDerivedValue(() => {
-                            progress.value = withTiming(focused ? 1 : 0, { duration: 250 });
-                        });
-                        const animatedStyle = useAnimatedStyle(() => ({
-                            transform: [{ translateY: -10 * progress.value }],
-                            borderRadius: 25,
-                            padding: 12,
-                        }));
-                        return (
-                            <Animated.View style={animatedStyle}>
-                                {focused ? (
-                                    <LinearGradient
-                                        colors={[Colors.BRAND_PRIMARY, Colors.BRAND_PRIMARY_LIGHT]}
-                                        start={{ x: -0.5, y: 1 }}
-                                        end={{ x: 1, y: -0.5 }}
-                                        style={{ borderRadius: 25, padding: 12 }}
-                                    >
-                                        <BrowseIcon />
-                                    </LinearGradient>
-                                ) : (
-                                    <BrowseIcon />
-                                )}
-                            </Animated.View>
-                        );
-                    },
+                    tabBarIcon: ({ focused }) => (
+                        <AnimatedTabIcon focused={focused}>
+                            <BrowseIcon />
+                        </AnimatedTabIcon>
+                    ),
                 }}
             />
 
@@ -113,33 +85,11 @@ export default function TabsLayout() {
                             My Jobs
                         </Text>
                     ),
-                    tabBarIcon: ({ focused }) => {
-                        const progress = useSharedValue(focused ? 1 : 0);
-                        useDerivedValue(() => {
-                            progress.value = withTiming(focused ? 1 : 0, { duration: 250 });
-                        });
-                        const animatedStyle = useAnimatedStyle(() => ({
-                            transform: [{ translateY: -10 * progress.value }],
-                            borderRadius: 25,
-                            padding: 12,
-                        }));
-                        return (
-                            <Animated.View style={animatedStyle}>
-                                {focused ? (
-                                    <LinearGradient
-                                        colors={[Colors.BRAND_PRIMARY, Colors.BRAND_PRIMARY_LIGHT]}
-                                        start={{ x: -0.5, y: 1 }}
-                                        end={{ x: 1, y: -0.5 }}
-                                        style={{ borderRadius: 25, padding: 12 }}
-                                    >
-                                        <JobsIcon />
-                                    </LinearGradient>
-                                ) : (
-                                    <JobsIcon />
-                                )}
-                            </Animated.View>
-                        );
-                    },
+                    tabBarIcon: ({ focused }) => (
+                        <AnimatedTabIcon focused={focused}>
+                            <JobsIcon />
+                        </AnimatedTabIcon>
+                    ),
                 }}
             />
 
@@ -152,33 +102,11 @@ export default function TabsLayout() {
                             Profile
                         </Text>
                     ),
-                    tabBarIcon: ({ focused }) => {
-                        const progress = useSharedValue(focused ? 1 : 0);
-                        useDerivedValue(() => {
-                            progress.value = withTiming(focused ? 1 : 0, { duration: 250 });
-                        });
-                        const animatedStyle = useAnimatedStyle(() => ({
-                            transform: [{ translateY: -10 * progress.value }],
-                            borderRadius: 25,
-                            padding: 12,
-                        }));
-                        return (
-                            <Animated.View style={animatedStyle}>
-                                {focused ? (
-                                    <LinearGradient
-                                        colors={[Colors.BRAND_PRIMARY, Colors.BRAND_PRIMARY_LIGHT]}
-                                        start={{ x: -0.5, y: 1 }}
-                                        end={{ x: 1, y: -0.5 }}
-                                        style={{ borderRadius: 25, padding: 12 }}
-                                    >
-                                        <ProfileIcon />
-                                    </LinearGradient>
-                                ) : (
-                                    <ProfileIcon />
-                                )}
-                            </Animated.View>
-                        );
-                    },
+                    tabBarIcon: ({ focused }) => (
+                        <AnimatedTabIcon focused={focused}>
+                            <ProfileIcon />
+                        </AnimatedTabIcon>
+                    ),
                 }}
             />
         </Tabs>

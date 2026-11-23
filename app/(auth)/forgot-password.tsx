@@ -62,7 +62,6 @@ export default function ForgotPassword() {
                     });
                 }
             } catch (error: any) {
-                console.log("Forgot Password Error:", error);
                 const message =
                     error?.data?.message ||
                     error?.message ||

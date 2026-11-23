@@ -1,3 +1,4 @@
+import { useConfirmServerPayment } from '@/hooks/useConfirmServerPayment';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useStripe } from '@stripe/stripe-react-native';
 import React, { useState } from 'react';
@@ -52,6 +53,7 @@ const TipSelectionContent: React.FC<TipSelectionProps> = ({
 }) => {
     const router = useRouter();
     const { initPaymentSheet, presentPaymentSheet } = useStripe();
+    const confirmServerPayment = useConfirmServerPayment();
     const params = useLocalSearchParams();
 
     const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
@@ -182,8 +184,17 @@ const TipSelectionContent: React.FC<TipSelectionProps> = ({
         const finalAmount = getFinalAmount();
         setIsSavedCardPaying(true);
         try {
-            await tipToBartender({ id: orderId, amount: finalAmount!, paymentMethodId: selectedCardId } as any).unwrap();
+            const data = await tipToBartender({
+                id: orderId,
+                amount: finalAmount!,
+                paymentMethodId: selectedCardId,
+            }).unwrap();
             setShowCardsModal(false);
+            const result = await confirmServerPayment(data.clientSecret);
+            if (result.status === 'failed') {
+                showToast(result.message, 'error');
+                return;
+            }
             await onPaymentSuccess();
         } catch (error: any) {
             setShowCardsModal(false);

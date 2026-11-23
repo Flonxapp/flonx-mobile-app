@@ -1,16 +1,20 @@
 import { showToast } from '@/components/Toast';
-import { logout } from '@/redux/authSlice';
+import { logout, setCredentials } from '@/redux/authSlice';
 import { getCurrentRoute } from '@/utils/routeStore';
 import { createApi, fetchBaseQuery, FetchBaseQueryError } from '@reduxjs/toolkit/query/react';
 import { router } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
-import { jwtDecode } from 'jwt-decode';
+import {
+  API_BASE,
+  clearSession,
+  loginAsGuest,
+  refreshAccessToken,
+} from '@/utils/session';
 
 const baseQuery = fetchBaseQuery({
-  baseUrl: 'https://rnj64vmh-3500.inc1.devtunnels.ms/api/v1',
+  baseUrl: API_BASE,
   prepareHeaders: async (headers) => {
     const token = await SecureStore.getItemAsync('accessToken');
-    // console.log(token)
     if (token) {
       headers.set('Authorization', `${token}`);
     }
@@ -25,69 +29,73 @@ export const setLastLoginTime = () => {
   lastLoginTime = Date.now();
 };
 
+const AUTH_ENDPOINTS = [
+  '/auth/login',
+  '/auth/guest',
+  '/auth/refresh-token',
+  '/user/register',
+  '/user/verify-code',
+  '/auth/forget-password',
+  '/auth/verify-reset-otp',
+  '/auth/reset-password',
+];
+
+// On 401: refresh the access token and retry once. A guest whose session
+// can't be refreshed gets a new guest session; a logged-in user is sent to
+// the login screen.
 const baseQueryWithAuth = async (args: any, api: any, extraOptions: any) => {
-    const result = await baseQuery(args, api, extraOptions);
-
-    if (result.error && (result.error as FetchBaseQueryError).status === 401) {
-        const url = typeof args === 'string' ? args : args?.url || '';
-        
-        const isAuthEndpoint =
-            url.includes('/auth/login') ||
-            url.includes('/auth/guest') ||
-            url.includes('/user/register') ||
-            url.includes('/auth/forget-password') ||
-            url.includes('/auth/verify-reset-otp') ||
-            url.includes('/auth/reset-password');
-
-       
-        if (isAuthEndpoint || isRedirectingToLogin || (Date.now() - lastLoginTime < 3000)) {
-            return result;
-        }
-
-        
-        const { store } = require('@/redux/store');
-        const currentRole = store.getState().auth.userRole;
-        
-        
-        if (!currentRole) return result;
-
-        const currentToken = await SecureStore.getItemAsync('accessToken');
-        
-       
-        if (!currentToken) return result;
-
-        try {
-            const decoded: any = jwtDecode(currentToken);
-            const isExpired = decoded.exp * 1000 < Date.now();
-            if (!isExpired) return result;
-        } catch (e) {}
-
-        showToast('Session expired. Please login again.', 'error');
-        isRedirectingToLogin = true;
-
-        await SecureStore.deleteItemAsync('accessToken');
-        await SecureStore.deleteItemAsync('rememberMe');
-        api.dispatch(logout());
-
-        const savedPath = getCurrentRoute();
-
-        setTimeout(() => {
-            if (currentRole === 'guest') {
-                router.replace('/select-role');
-            } else {
-                router.replace({
-                    pathname: '/(auth)/login',
-                    params: { returnTo: savedPath ? encodeURIComponent(savedPath) : '' },
-                });
-            }
-
-            setTimeout(() => {
-                isRedirectingToLogin = false;
-            }, 2000);
-        }, 100);
-    }
-
+  let result = await baseQuery(args, api, extraOptions);
+  if (!result.error || (result.error as FetchBaseQueryError).status !== 401) {
     return result;
+  }
+
+  const url = typeof args === 'string' ? args : args?.url || '';
+  if (AUTH_ENDPOINTS.some((p) => url.includes(p))) return result;
+
+  const { store } = require('@/redux/store');
+  const currentRole = store.getState().auth.userRole;
+  if (!currentRole || !(await SecureStore.getItemAsync('accessToken'))) {
+    return result;
+  }
+
+  const refreshed = await refreshAccessToken();
+  if (refreshed) {
+    api.dispatch(setCredentials({ role: currentRole, token: refreshed }));
+    result = await baseQuery(args, api, extraOptions);
+    if (!result.error || (result.error as FetchBaseQueryError).status !== 401) {
+      return result;
+    }
+  }
+
+  if (currentRole === 'guest') {
+    const guestToken = await loginAsGuest();
+    if (guestToken) {
+      api.dispatch(setCredentials({ role: 'guest', token: guestToken }));
+      return baseQuery(args, api, extraOptions);
+    }
+    return result;
+  }
+
+  // a 401 right after logging in is a role mismatch, not an expired session
+  if (isRedirectingToLogin || Date.now() - lastLoginTime < 3000) return result;
+
+  showToast('Session expired. Please login again.', 'error');
+  isRedirectingToLogin = true;
+  await clearSession();
+  api.dispatch(logout());
+
+  const savedPath = getCurrentRoute();
+  setTimeout(() => {
+    router.replace({
+      pathname: '/(auth)/login',
+      params: { returnTo: savedPath ? encodeURIComponent(savedPath) : '' },
+    });
+    setTimeout(() => {
+      isRedirectingToLogin = false;
+    }, 2000);
+  }, 100);
+
+  return result;
 };
 
 export const baseApis = createApi({

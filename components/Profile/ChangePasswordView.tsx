@@ -68,7 +68,6 @@ export default function ChangePasswordView() {
                     router.replace(targetPath);
                 }
             } catch (error: any) {
-                console.log("Change Password Error:", JSON.stringify(error, null, 2));
                 const message = error?.data?.message || "Failed to change password";
                 showToast(message, "error");
             }

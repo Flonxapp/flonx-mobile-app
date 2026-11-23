@@ -142,13 +142,11 @@ export const validateName = (name: string): string => {
 
 export const validateDOB = (dob: string): string => {
   if (!dob.trim()) return 'Date of birth is required';
-  console.log(dob)
   // Parse DD/MM.l/YYYY
   const [day, month, year] = dob.split('/').map(Number);
   const birthDate = new Date(year, month - 1, day);
 
   const today = new Date();
-  console.log(`${day}-${month}-${year}`)
   if (isNaN(birthDate.getTime())) {
     return 'Please enter a valid date';
   }

@@ -120,11 +120,20 @@ export const authApi = baseApis.injectEndpoints({
         }),
 
         // guest login 
+        // tells the server to stop push notifications to this phone
+        logoutUser: builder.mutation({
+            query: (body: { playerId?: string | null }) => ({
+                url: '/auth/logout',
+                method: 'POST',
+                body,
+            }),
+        }),
+
         guestLogin: builder.mutation({
-            query: (deviceId: string) => ({
+            query: (body: { deviceId: string; guestSecret?: string }) => ({
                 url: '/auth/guest',
                 method: 'POST',
-                body: { deviceId },
+                body,
             }),
             transformResponse: (response: any) => response.data,
         }),
@@ -155,5 +164,6 @@ export const {
     useGetProfileQuery,
     useUpdateProfileMutation,
     useGuestLoginMutation,
+    useLogoutUserMutation,
     useGetBartenderByIdQuery
 } = authApi;

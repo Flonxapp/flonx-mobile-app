@@ -9,11 +9,13 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "com.delwarhosen.Flonx",
-      "associatedDomains": [
-        "applinks:rnj64vmh-3500.inc1.devtunnels.ms"
-      ]
+      "buildNumber": "1",
+      "icon": "./assets/images/icon-ios.png",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -28,24 +30,7 @@
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION"
       ],
-      "intentFilters": [
-        {
-          "action": "VIEW",
-          "autoVerify": true,
-          "data": [
-            {
-              "scheme": "https",
-              "host": "rnj64vmh-3500.inc1.devtunnels.ms",
-              "pathPrefix": "/venue"
-            },
-            {
-              "scheme": "https",
-              "host": "rnj64vmh-3500.inc1.devtunnels.ms",
-              "pathPrefix": "/payment_success"
-            }
-          ]
-        }
-      ]
+      "versionCode": 1
     },
     "plugins": [
       "expo-router",
@@ -64,13 +49,13 @@
       [
         "onesignal-expo-plugin",
         {
-          "mode": "development"
+          "mode": "production"
         }
       ],
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Allow app to use your location."
+          "locationWhenInUsePermission": "Flonx uses your location to show bars and venues near you."
         }
       ],
       "expo-font",
@@ -81,6 +66,21 @@
         {
           "merchantIdentifier": "merchant.com.flonx",
           "enableGooglePay": true
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Flonx uses the camera to scan venue QR codes.",
+          "recordAudioAndroid": false
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Flonx needs access to your photos so you can choose a profile picture.",
+          "cameraPermission": "Flonx uses the camera so you can take a profile picture.",
+          "microphonePermission": false
         }
       ]
     ],

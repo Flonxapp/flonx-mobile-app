@@ -31,7 +31,6 @@ const GigDetails = () => {
         refetchOnFocus: true,
     });
 
-console.log()
 
     const [deleteJob] = useDeleteJobMutation();
     const [markJobAsComplete] = useMarkJobAsCompleteMutation();

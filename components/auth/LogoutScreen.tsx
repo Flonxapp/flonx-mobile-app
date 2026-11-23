@@ -4,9 +4,10 @@ import CustomLoader from "@/components/CustomLoader";
 import { Colors } from "@/constants/theme";
 import { logout } from '@/redux/authSlice';
 import { baseApis } from '@/redux/base';
-import { useGuestLoginMutation } from '@/redux/services/authApi';
+import { useLogoutUserMutation } from '@/redux/services/authApi';
+import { clearSession } from '@/utils/session';
+import { OneSignal } from 'react-native-onesignal';
 import { useRouter } from 'expo-router';
-import * as SecureStore from 'expo-secure-store';
 import React, { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -21,17 +22,23 @@ export default function LogoutScreen({ redirectRoute = '/select-role' }: LogoutS
     const dispatch = useDispatch();
     const [showModal, setShowModal] = useState<boolean>(true);
     const [loading, setLoading] = useState<boolean>(false);
-    const [guestLogin] = useGuestLoginMutation();
+    const [logoutUser] = useLogoutUserMutation();
 
     const handleLogout = (): void => {
         setShowModal(false);
         setTimeout(async () => {
+            setLoading(true);
             try {
-                await SecureStore.deleteItemAsync('accessToken');
-                await SecureStore.deleteItemAsync('rememberMe');
+                // stop push notifications to this phone for this account
+                const playerId = await OneSignal.User.pushSubscription
+                    .getIdAsync()
+                    .catch(() => null);
+                await logoutUser({ playerId }).unwrap().catch(() => undefined);
+            } finally {
+                await clearSession();
                 dispatch(logout());
                 dispatch(baseApis.util.resetApiState());
-            } catch (error) {
+                setLoading(false);
                 router.replace('/(auth)/login');
             }
         }, 300);

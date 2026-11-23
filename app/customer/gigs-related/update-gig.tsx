@@ -109,7 +109,6 @@ const UpdateGig: React.FC = () => {
             setSuggestions([]);
             setShowSuggestions(false);
         } catch (err) {
-            console.log('GPS failed');
         } finally {
             setLocationLoading(false);
         }

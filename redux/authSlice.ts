@@ -1,5 +1,4 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import * as SecureStore from 'expo-secure-store';
 
 interface AuthState {
     userRole: 'customer' | 'bartender' | 'guest' | null;
@@ -35,7 +34,7 @@ export const authSlice = createSlice({
             state.userRole = null;
             state.token = null;
             state.user = null;
-            SecureStore.deleteItemAsync('accessToken');
+            // stored tokens are removed by clearSession() in utils/session
         },
     },
 });

@@ -1,15 +1,9 @@
+import { AnimatedTabIcon } from '@/components/AnimatedTabIcon';
 import { OrderTabIcon, SearchBarIcon } from "@/assets/images/icons/icon";
 import { Colors } from "@/constants/theme";
-import { LinearGradient } from "expo-linear-gradient";
 import { Tabs } from "expo-router";
 import React from "react";
 import { Platform } from "react-native";
-import Animated, {
-    useAnimatedStyle,
-    useDerivedValue,
-    useSharedValue,
-    withTiming
-} from "react-native-reanimated";
 
 export default function TabsLayout() {
     return (
@@ -37,38 +31,11 @@ export default function TabsLayout() {
                     title: "Search",
                     tabBarLabelStyle: { fontWeight: '800', fontSize: 11 },
                     tabBarLabel: "Search",
-                    tabBarIcon: ({ focused }) => {
-                        const progress = useSharedValue(focused ? 0 : 1);
-
-                        useDerivedValue(() => {
-                            progress.value = withTiming(focused ? 1 : 0, { duration: 250 });
-                        });
-
-                        const animatedStyle = useAnimatedStyle(() => ({
-                            transform: [{ translateY: -10 * progress.value }],
-                            borderRadius: 25,
-                            padding: 12,
-                        }));
-
-                        return (
-                            <Animated.View
-                                style={animatedStyle}
-                            >
-                                {focused ? (
-                                    <LinearGradient
-                                        colors={[Colors.BRAND_PRIMARY, Colors.BRAND_PRIMARY_LIGHT]}
-                                        start={{ x: -0.5, y: 1 }}
-                                        end={{ x: 1, y: -0.5 }}
-                                        style={{ borderRadius: 25, padding: 12 }}
-                                    >
-                                        <SearchBarIcon />
-                                    </LinearGradient>
-                                ) : (
-                                    <SearchBarIcon />
-                                )}
-                            </Animated.View>
-                        );
-                    },
+                    tabBarIcon: ({ focused }) => (
+                        <AnimatedTabIcon focused={focused}>
+                            <SearchBarIcon />
+                        </AnimatedTabIcon>
+                    ),
                 }}
             />
 
@@ -78,38 +45,11 @@ export default function TabsLayout() {
                     title: "Order",
                     tabBarLabelStyle: { fontWeight: '800', fontSize: 11 },
                     tabBarLabel: "Order",
-                    tabBarIcon: ({ focused }) => {
-                        const progress = useSharedValue(focused ? 1 : 0);
-
-                        useDerivedValue(() => {
-                            progress.value = withTiming(focused ? 1 : 0, { duration: 250 });
-                        });
-
-                        const animatedStyle = useAnimatedStyle(() => ({
-                            transform: [{ translateY: -10 * progress.value }],
-                            borderRadius: 25,
-                            padding: 12,
-                        }));
-
-                        return (
-                            <Animated.View
-                                style={animatedStyle}
-                            >
-                                {focused ? (
-                                    <LinearGradient
-                                        colors={[Colors.BRAND_PRIMARY, Colors.BRAND_PRIMARY_LIGHT]}
-                                        start={{ x: -0.5, y: 1 }}
-                                        end={{ x: 1, y: -0.5 }}
-                                        style={{ borderRadius: 25, padding: 12 }}
-                                    >
-                                        <OrderTabIcon />
-                                    </LinearGradient>
-                                ) : (
-                                    <OrderTabIcon />
-                                )}
-                            </Animated.View>
-                        );
-                    },
+                    tabBarIcon: ({ focused }) => (
+                        <AnimatedTabIcon focused={focused}>
+                            <OrderTabIcon />
+                        </AnimatedTabIcon>
+                    ),
                 }}
             />
         </Tabs>

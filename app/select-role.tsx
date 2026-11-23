@@ -11,14 +11,12 @@ import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useDispatch } from 'react-redux';
 
-import * as SecureStore from 'expo-secure-store';
 // ConfirmationModal import
 import { ConfirmationModal } from "@/components/ConfirmationModalProps";
 import { baseApis } from '@/redux/base';
-import { useGuestLoginMutation } from '@/redux/services/authApi';
-import { getDeviceId } from '@/utils/deviceId';
+import { getStoredSession, loginAsGuest } from '@/utils/session';
+import { showToast } from '@/components/Toast';
 import { hp, wp } from '@/utils/responsive';
-import { jwtDecode } from 'jwt-decode';
 
 const { width, height } = Dimensions.get('window');
 const isIOS = Platform.OS === 'ios';
@@ -41,7 +39,6 @@ export default function SelectRole() {
     const dispatch = useDispatch();
     const [selectedRole, setSelectedRole] = useState<'guest' | 'customer' | 'bartender' | null>(null);
     const [showAgeModal, setShowAgeModal] = useState<boolean>(false);
-    const [guestLogin] = useGuestLoginMutation();
 
     const handleRole = () => {
         if (!selectedRole) return;
@@ -52,42 +49,18 @@ export default function SelectRole() {
         setShowAgeModal(false);
 
         if (selectedRole === 'guest') {
-            const existingToken = await SecureStore.getItemAsync('accessToken');
-
-            if (existingToken) {
-                try {
-                    const decoded: any = jwtDecode(existingToken);
-
-                    if (decoded.role === 'customer' || decoded.role === 'bartender') {
-
-                        const deviceId = await getDeviceId();
-                        const res = await guestLogin(deviceId).unwrap();
-                    
-                        if (res?.accessToken) {
-                            await SecureStore.setItemAsync('accessToken', res.accessToken);
-                            dispatch(setCredentials({ role: 'guest', token: res.accessToken }));
-                            dispatch(baseApis.util.resetApiState());
-                        }
-                        
-                    } else {
-
-                        dispatch(setRole('guest'));
-                    }
-                } catch (e) {
-                    console.log('Guest login error:', e);
-                    dispatch(setRole('guest'));
-                }
+            // keep an existing guest session; otherwise switch to a guest one
+            const saved = await getStoredSession();
+            if (saved.role === 'guest' && saved.accessToken) {
+                dispatch(setCredentials({ role: 'guest', token: saved.accessToken }));
             } else {
-
-                try {
-                    const deviceId = await getDeviceId();
-                    const res = await guestLogin(deviceId).unwrap();
-                    if (res?.accessToken) {
-                        await SecureStore.setItemAsync('accessToken', res.accessToken);
-                        dispatch(setCredentials({ role: 'guest', token: res.accessToken }));
-                    }
-                } catch (e) {
-                    console.log('Guest login error:', e);
+                const token = await loginAsGuest();
+                if (token) {
+                    dispatch(setCredentials({ role: 'guest', token }));
+                    dispatch(baseApis.util.resetApiState());
+                } else {
+                    showToast('Could not start a guest session. Please try again.', 'error');
+                    return;
                 }
             }
             router.replace("/guest/(tabs)/search" as any);

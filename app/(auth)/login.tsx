@@ -14,7 +14,7 @@ import { useLoginMutation } from '@/redux/services/authApi';
 import { hp, wp } from '@/utils/responsive';
 import { validateEmail, validatePassword } from '@/utils/validation';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
-import * as SecureStore from 'expo-secure-store';
+import { saveSession } from '@/utils/session';
 import { jwtDecode } from "jwt-decode";
 import React from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
@@ -53,15 +53,16 @@ export default function LoginScreen() {
         if (res?.success && res?.data?.accessToken) {
           const token = res.data.accessToken;
 
-          await SecureStore.setItemAsync('accessToken', token);
-          await SecureStore.setItemAsync('refreshToken', res.data.refreshToken || '');
-
-          await SecureStore.setItemAsync('rememberMe', isRemembered ? 'true' : 'false');
-
           const decoded: any = jwtDecode(token);
           const roleFromToken = decoded.role;
 
-          if (roleFromToken) {
+          if (roleFromToken === 'customer' || roleFromToken === 'bartender') {
+            await saveSession({
+              accessToken: token,
+              refreshToken: res.data.refreshToken,
+              role: roleFromToken,
+              remember: isRemembered,
+            });
             setLastLoginTime();
             dispatch(setCredentials({ role: roleFromToken, token }));
             dispatch(setCartRole(roleFromToken));
@@ -80,6 +81,8 @@ export default function LoginScreen() {
               }
             }, 300);
 
+          } else {
+            showToast('This app is for customers and bartenders.', 'error');
           }
         }
       } catch (error: any) {

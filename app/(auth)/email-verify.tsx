@@ -9,7 +9,7 @@ import { useResendVerifyCodeMutation, useVerifyEmailMutation } from '@/redux/ser
 import { RootState } from '@/redux/store';
 import { hp, wp } from '@/utils/responsive';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import * as SecureStore from 'expo-secure-store';
+import { saveSession } from '@/utils/session';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Dimensions,
@@ -92,10 +92,14 @@ export default function EmailVerifyOtp() {
 
       if (res?.success) {
         if (res.data?.accessToken) {
-          await SecureStore.setItemAsync('accessToken', res.data.accessToken);
-          await SecureStore.setItemAsync('refreshToken', res.data.refreshToken);
-
-          dispatch(setCredentials({ role: userRole as any, token: res.data.accessToken }));
+          const role = isBartender ? 'bartender' : 'customer';
+          await saveSession({
+            accessToken: res.data.accessToken,
+            refreshToken: res.data.refreshToken,
+            role,
+            remember: true,
+          });
+          dispatch(setCredentials({ role, token: res.data.accessToken }));
         }
 
         showToast(res.message || "Verification Successful!", 'success');
@@ -107,7 +111,6 @@ export default function EmailVerifyOtp() {
         }
       }
     } catch (error: any) {
-      console.log("Verify Error:", error);
       const errorMsg = error?.data?.message || "Verification failed!";
       showToast(errorMsg, 'error');
       setCode('');

@@ -1,15 +1,9 @@
+import { AnimatedTabIcon } from '@/components/AnimatedTabIcon';
 import { GigIcon, HomeIcon, OrderTabIcon, ProfileIcon, SearchBarIcon } from "@/assets/images/icons/icon";
 import { Colors } from "@/constants/theme";
-import { LinearGradient } from "expo-linear-gradient";
 import { Tabs, useFocusEffect, useRouter } from "expo-router";
 import React, { useCallback, useRef } from "react";
 import { BackHandler, Platform } from "react-native";
-import Animated, {
-    useAnimatedStyle,
-    useDerivedValue,
-    useSharedValue,
-    withTiming
-} from "react-native-reanimated";
 
 export default function TabsLayout() {
     const router = useRouter();
@@ -63,33 +57,11 @@ export default function TabsLayout() {
                 options={{
                     title: "Home",
                     tabBarLabel: "Home",
-                    tabBarIcon: ({ focused }) => {
-                        const progress = useSharedValue(focused ? 1 : 0);
-                        useDerivedValue(() => {
-                            progress.value = withTiming(focused ? 1 : 0, { duration: 250 });
-                        });
-                        const animatedStyle = useAnimatedStyle(() => ({
-                            transform: [{ translateY: -10 * progress.value }],
-                            borderRadius: 25,
-                            padding: 12,
-                        }));
-                        return (
-                            <Animated.View style={animatedStyle}>
-                                {focused ? (
-                                    <LinearGradient
-                                        colors={[Colors.BRAND_PRIMARY, Colors.BRAND_PRIMARY_LIGHT]}
-                                        start={{ x: -0.5, y: 1 }}
-                                        end={{ x: 1, y: -0.5 }}
-                                        style={{ borderRadius: 25, padding: 12 }}
-                                    >
-                                        <HomeIcon />
-                                    </LinearGradient>
-                                ) : (
-                                    <HomeIcon />
-                                )}
-                            </Animated.View>
-                        );
-                    },
+                    tabBarIcon: ({ focused }) => (
+                        <AnimatedTabIcon focused={focused}>
+                            <HomeIcon />
+                        </AnimatedTabIcon>
+                    ),
                 }}
             />
 
@@ -98,33 +70,11 @@ export default function TabsLayout() {
                 options={{
                     title: "Search",
                     tabBarLabel: "Search",
-                    tabBarIcon: ({ focused }) => {
-                        const progress = useSharedValue(focused ? 1 : 0);
-                        useDerivedValue(() => {
-                            progress.value = withTiming(focused ? 1 : 0, { duration: 250 });
-                        });
-                        const animatedStyle = useAnimatedStyle(() => ({
-                            transform: [{ translateY: -10 * progress.value }],
-                            borderRadius: 25,
-                            padding: 12,
-                        }));
-                        return (
-                            <Animated.View style={animatedStyle}>
-                                {focused ? (
-                                    <LinearGradient
-                                        colors={[Colors.BRAND_PRIMARY, Colors.BRAND_PRIMARY_LIGHT]}
-                                        start={{ x: -0.5, y: 1 }}
-                                        end={{ x: 1, y: -0.5 }}
-                                        style={{ borderRadius: 25, padding: 12 }}
-                                    >
-                                        <SearchBarIcon />
-                                    </LinearGradient>
-                                ) : (
-                                    <SearchBarIcon />
-                                )}
-                            </Animated.View>
-                        );
-                    },
+                    tabBarIcon: ({ focused }) => (
+                        <AnimatedTabIcon focused={focused}>
+                            <SearchBarIcon />
+                        </AnimatedTabIcon>
+                    ),
                 }}
             />
 
@@ -133,33 +83,11 @@ export default function TabsLayout() {
                 options={{
                     title: "Orders",
                     tabBarLabel: "Orders",
-                    tabBarIcon: ({ focused }) => {
-                        const progress = useSharedValue(focused ? 1 : 0);
-                        useDerivedValue(() => {
-                            progress.value = withTiming(focused ? 1 : 0, { duration: 250 });
-                        });
-                        const animatedStyle = useAnimatedStyle(() => ({
-                            transform: [{ translateY: -10 * progress.value }],
-                            borderRadius: 25,
-                            padding: 12,
-                        }));
-                        return (
-                            <Animated.View style={animatedStyle}>
-                                {focused ? (
-                                    <LinearGradient
-                                        colors={[Colors.BRAND_PRIMARY, Colors.BRAND_PRIMARY_LIGHT]}
-                                        start={{ x: -0.5, y: 1 }}
-                                        end={{ x: 1, y: -0.5 }}
-                                        style={{ borderRadius: 25, padding: 12 }}
-                                    >
-                                        <OrderTabIcon />
-                                    </LinearGradient>
-                                ) : (
-                                    <OrderTabIcon />
-                                )}
-                            </Animated.View>
-                        );
-                    },
+                    tabBarIcon: ({ focused }) => (
+                        <AnimatedTabIcon focused={focused}>
+                            <OrderTabIcon />
+                        </AnimatedTabIcon>
+                    ),
                 }}
             />
 
@@ -168,33 +96,11 @@ export default function TabsLayout() {
                 options={{
                     title: "Gigs",
                     tabBarLabel: "Gigs",
-                    tabBarIcon: ({ focused }) => {
-                        const progress = useSharedValue(focused ? 1 : 0);
-                        useDerivedValue(() => {
-                            progress.value = withTiming(focused ? 1 : 0, { duration: 250 });
-                        });
-                        const animatedStyle = useAnimatedStyle(() => ({
-                            transform: [{ translateY: -10 * progress.value }],
-                            borderRadius: 25,
-                            padding: 12,
-                        }));
-                        return (
-                            <Animated.View style={animatedStyle}>
-                                {focused ? (
-                                    <LinearGradient
-                                        colors={[Colors.BRAND_PRIMARY, Colors.BRAND_PRIMARY_LIGHT]}
-                                        start={{ x: -0.5, y: 1 }}
-                                        end={{ x: 1, y: -0.5 }}
-                                        style={{ borderRadius: 25, padding: 12 }}
-                                    >
-                                        <GigIcon />
-                                    </LinearGradient>
-                                ) : (
-                                    <GigIcon />
-                                )}
-                            </Animated.View>
-                        );
-                    },
+                    tabBarIcon: ({ focused }) => (
+                        <AnimatedTabIcon focused={focused}>
+                            <GigIcon />
+                        </AnimatedTabIcon>
+                    ),
                 }}
             />
 
@@ -203,33 +109,11 @@ export default function TabsLayout() {
                 options={{
                     title: "Profile",
                     tabBarLabel: "Profile",
-                    tabBarIcon: ({ focused }) => {
-                        const progress = useSharedValue(focused ? 1 : 0);
-                        useDerivedValue(() => {
-                            progress.value = withTiming(focused ? 1 : 0, { duration: 250 });
-                        });
-                        const animatedStyle = useAnimatedStyle(() => ({
-                            transform: [{ translateY: -10 * progress.value }],
-                            borderRadius: 25,
-                            padding: 12,
-                        }));
-                        return (
-                            <Animated.View style={animatedStyle}>
-                                {focused ? (
-                                    <LinearGradient
-                                        colors={[Colors.BRAND_PRIMARY, Colors.BRAND_PRIMARY_LIGHT]}
-                                        start={{ x: -0.5, y: 1 }}
-                                        end={{ x: 1, y: -0.5 }}
-                                        style={{ borderRadius: 25, padding: 12 }}
-                                    >
-                                        <ProfileIcon />
-                                    </LinearGradient>
-                                ) : (
-                                    <ProfileIcon />
-                                )}
-                            </Animated.View>
-                        );
-                    },
+                    tabBarIcon: ({ focused }) => (
+                        <AnimatedTabIcon focused={focused}>
+                            <ProfileIcon />
+                        </AnimatedTabIcon>
+                    ),
                 }}
             />
         </Tabs>

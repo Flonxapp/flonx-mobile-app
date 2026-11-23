@@ -2,10 +2,14 @@ import Toast, { showToast } from '@/components/Toast';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { setCredentials } from '@/redux/authSlice';
 import { clearCart, setCartRole, setItemQuantity } from '@/redux/cartSlice';
-import { useGuestLoginMutation } from '@/redux/services/authApi';
 import { useViewCartQuery } from '@/redux/services/orderApi';
 import { RootState, store } from '@/redux/store';
-import { getDeviceId } from '@/utils/deviceId';
+import {
+  clearSession,
+  getStoredSession,
+  loginAsGuest,
+  refreshAccessToken,
+} from '@/utils/session';
 import { setCurrentRoute } from '@/utils/routeStore';
 import {
   Nunito_400Regular,
@@ -20,8 +24,7 @@ import {
 } from "@expo-google-fonts/nunito";
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { StripeProvider } from '@stripe/stripe-react-native';
-import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
-import { Stack, usePathname, useRouter, useSegments } from 'expo-router';
+import { router, Stack, usePathname, useRouter, useSegments } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from 'expo-status-bar';
@@ -33,15 +36,24 @@ import 'react-native-reanimated';
 import { Provider, useDispatch, useSelector } from 'react-redux';
 
 SplashScreen.preventAutoHideAsync();
-LogBox.ignoreAllLogs();
+if (__DEV__) {
+  // keep warnings visible in release crash reports; only hide in dev
+  LogBox.ignoreLogs(['Require cycle:']);
+}
 
-OneSignal.Debug.setLogLevel(LogLevel.Verbose);
-OneSignal.initialize(process.env.EXPO_PUBLIC_ONESIGNAL_APP_ID!);
-OneSignal.Notifications.requestPermission(true);
-OneSignal.Notifications.addEventListener('click', (event: any) => {
-  const data = event.notification.additionalData;
-  console.log('Notification clicked:', data);
-});
+const ONESIGNAL_APP_ID = process.env.EXPO_PUBLIC_ONESIGNAL_APP_ID;
+if (ONESIGNAL_APP_ID) {
+  if (__DEV__) OneSignal.Debug.setLogLevel(LogLevel.Verbose);
+  OneSignal.initialize(ONESIGNAL_APP_ID);
+  OneSignal.Notifications.addEventListener('click', () => {
+    const role = store.getState().auth.userRole;
+    if (role === 'bartender') {
+      router.push('/bartender/profile/notification' as any);
+    } else if (role === 'customer') {
+      router.push('/customer/notification' as any);
+    }
+  });
+}
 
 // ── Route Tracker ─────────────────────────────────────────────
 function RouteTracker() {
@@ -60,16 +72,24 @@ function AuthGuard() {
   const router = useRouter();
 
   useEffect(() => {
-    const inAuthGroup = segments[0] === '(auth)';
-    const inSelectRole = segments[0] === 'select-role';
-    const inOnboarding = segments[0] === 'onboarding';
-    const inBartenderInfo = segments[0] === 'bartender-info';
-    const inGuest = segments[0] === 'guest'; 
+    const first = segments[0] as string | undefined;
+    const isPublic =
+      !first ||
+      first === '(auth)' ||
+      first === 'select-role' ||
+      first === 'onboarding' ||
+      first === 'bartender-info' ||
+      first === 'guest' ||
+      first === 'payment-success' ||
+      first === 'payment-cancel';
+    if (isPublic) return;
 
-    if (inAuthGroup || inSelectRole || inOnboarding || inBartenderInfo || inGuest) return; 
-
-    const isAuthenticated = token && (userRole === 'customer' || userRole === 'bartender');
-    if (!isAuthenticated) {
+    // customer screens need a customer account, bartender screens a bartender
+    const allowed =
+      !!token &&
+      ((first === 'customer' && userRole === 'customer') ||
+        (first === 'bartender' && userRole === 'bartender'));
+    if (!allowed) {
       router.replace('/(auth)/login');
     }
   }, [token, userRole, segments]);
@@ -79,7 +99,6 @@ function AuthGuard() {
 // ── App Init ──────────────────────────────────────────────────
 function AppInit() {
   const dispatch = useDispatch();
-  const [guestLogin] = useGuestLoginMutation();
   const { data: cartData } = useViewCartQuery(undefined);
 
   useEffect(() => {
@@ -98,52 +117,62 @@ function AppInit() {
   }, [cartData]);
 
   useEffect(() => {
+    const isExpired = (token: string) => {
+      try {
+        const decoded: any = jwtDecode(token);
+        return decoded.exp * 1000 < Date.now() + 30000;
+      } catch {
+        return true;
+      }
+    };
+
     const initAuth = async () => {
-      const existingToken = await SecureStore.getItemAsync('accessToken');
-      const rememberMe = await SecureStore.getItemAsync('rememberMe');
+      const saved = await getStoredSession();
+      let role = saved.role;
 
-      if (existingToken) {
+      // sessions saved before the role was stored: only remembered
+      // customer/bartender logins are kept (old guest sessions start fresh)
+      if (saved.accessToken && !role && saved.remember) {
         try {
-          const decoded: any = jwtDecode(existingToken);
-          const isExpired = decoded.exp * 1000 < Date.now();
-
-          if (isExpired) {
-            await SecureStore.deleteItemAsync('accessToken');
-            await SecureStore.deleteItemAsync('rememberMe');
-          } else if (decoded.isGuest) {
-            dispatch(setCredentials({ role: 'guest', token: existingToken }));
-            dispatch(setCartRole('guest'));
-            return;
-          } else if (decoded.role === 'customer' || decoded.role === 'bartender') {
-            if (rememberMe === 'true') {
-              dispatch(setCredentials({ role: decoded.role, token: existingToken }));
-              dispatch(setCartRole(decoded.role));
-              return;
-            } else {
-              await SecureStore.deleteItemAsync('accessToken');
-              await SecureStore.deleteItemAsync('rememberMe');
-            }
+          const decoded: any = jwtDecode(saved.accessToken);
+          if (decoded.role === 'customer' || decoded.role === 'bartender') {
+            role = decoded.role;
           }
-        } catch (e) {
-          await SecureStore.deleteItemAsync('accessToken');
+        } catch {}
+      }
+
+      if (saved.accessToken && role && (role === 'guest' || saved.remember)) {
+        let token: string | null = saved.accessToken;
+        if (isExpired(token)) token = await refreshAccessToken();
+        if (token) {
+          if (!saved.role) await SecureStore.setItemAsync('authRole', role);
+          dispatch(setCredentials({ role, token }));
+          dispatch(setCartRole(role));
+          return;
         }
       }
 
-      try {
-        const deviceId = await getDeviceId();
-        const res = await guestLogin(deviceId).unwrap();
-        if (res?.accessToken) {
-          await SecureStore.setItemAsync('accessToken', res.accessToken);
-          dispatch(setCredentials({ role: 'guest', token: res.accessToken }));
-          dispatch(setCartRole('guest'));
-        }
-      } catch (e: any) {
-        showToast(e.message || 'Auto guest login error', 'error');
+      // nothing to restore: start as a guest
+      await clearSession();
+      const guestToken = await loginAsGuest();
+      if (guestToken) {
+        dispatch(setCredentials({ role: 'guest', token: guestToken }));
+        dispatch(setCartRole('guest'));
+      } else {
+        showToast('Could not connect. Please check your internet connection.', 'error');
       }
     };
 
     initAuth();
   }, []);
+
+  // ask for push permission once someone is using the app (not at launch)
+  const userRole = useSelector((state: RootState) => state.auth.userRole);
+  useEffect(() => {
+    if (ONESIGNAL_APP_ID && (userRole === 'customer' || userRole === 'bartender')) {
+      OneSignal.Notifications.requestPermission(true).catch(() => undefined);
+    }
+  }, [userRole]);
 
   return null;
 }
@@ -151,20 +180,6 @@ function AppInit() {
 // ── Root Layout Inner ─────────────────────────────────────────
 function RootLayoutInner() {
   const colorScheme = useColorScheme();
-
-  useEffect(() => {
-    const activate = async () => {
-      try {
-        await activateKeepAwakeAsync();
-      } catch (err: any) {
-        showToast("Keep Awake: " + err.message, "info");
-      }
-    };
-    activate();
-    return () => {
-      deactivateKeepAwake();
-    };
-  }, []);
 
   const [fontsLoaded, fontError] = useFonts({
     Nunito_400Regular,
@@ -193,7 +208,11 @@ function RootLayoutInner() {
 
   return (
     <View style={{ flex: 1, backgroundColor: '#0D0D1A' }}>
-      <StripeProvider publishableKey={process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY!}>
+      <StripeProvider
+        publishableKey={process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY || ''}
+        merchantIdentifier="merchant.com.flonx"
+        urlScheme="flonx"
+      >
         <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
           <AppInit />
           <RouteTracker />

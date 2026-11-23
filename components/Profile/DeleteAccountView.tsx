@@ -8,6 +8,8 @@ import { FORM_FIELDS, FORM_LABELS, FORM_PLACEHOLDERS } from "@/constants/form";
 import { Colors } from "@/constants/theme";
 import { useForm } from "@/hooks/useForm";
 import { logout } from "@/redux/authSlice";
+import { baseApis } from "@/redux/base";
+import { clearSession } from "@/utils/session";
 import { useDeleteAccountMutation } from "@/redux/services/authApi";
 import { RootState } from "@/redux/store";
 import { fp, hp, wp } from "@/utils/responsive";
@@ -70,7 +72,9 @@ export default function DeleteAccountView() {
                 if (res?.success) {
                     showToast(res.message || "Account deleted successfully");
                     setShowPasswordModal(false);
+                    await clearSession();
                     dispatch(logout());
+                    dispatch(baseApis.util.resetApiState());
 
                     setTimeout(() => {
                         router.replace("/(auth)/login");

@@ -56,7 +56,6 @@ export default function RegisterScreen() {
       setSuggestions([]);
       setShowSuggestions(false);
     } catch (err) {
-      console.log('GPS failed');
     } finally {
       setLocationLoading(false);
     }
